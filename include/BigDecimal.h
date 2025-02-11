@@ -4,79 +4,97 @@
 
 #ifndef BIGDECIMAL_H
 #define BIGDECIMAL_H
+#include <ostream>
 #include <vector>
 
 
 namespace ephir::bigdecimal {
+    static bool containsNotDigit(const std::string_view &);
+
     class BigDecimal final {
     public:
+#pragma region Constructors / Destructors
+        static BigDecimal create(const std::string_view &);
+
         BigDecimal() = default;
 
         BigDecimal(const BigDecimal &other) = default;
 
-        explicit BigDecimal(size_t capacity);
+        BigDecimal(BigDecimal &&other) = default;
 
-        explicit BigDecimal(const std::string_view &value);
+        explicit BigDecimal(size_t size);
 
-        explicit BigDecimal(const char *value);
+        explicit BigDecimal(int8_t value);
 
-        explicit BigDecimal(std::int8_t value);
+        explicit BigDecimal(uint8_t value);
 
-        explicit BigDecimal(std::uint8_t value);
+        explicit BigDecimal(int16_t value);
 
-        explicit BigDecimal(std::int16_t value);
+        explicit BigDecimal(uint16_t value);
 
-        explicit BigDecimal(std::uint16_t value);
+        explicit BigDecimal(int32_t value);
 
-        explicit BigDecimal(std::int32_t value);
+        explicit BigDecimal(uint32_t value);
 
-        explicit BigDecimal(std::uint32_t value);
+        explicit BigDecimal(int64_t value);
 
-        explicit BigDecimal(std::int64_t value);
+        explicit BigDecimal(uint64_t value);
 
-        explicit BigDecimal(std::uint64_t value);
-
-        explicit BigDecimal(std::float_t value);
-
-        explicit BigDecimal(std::double_t value);
-
-        explicit BigDecimal(long double value);
+        // explicit BigDecimal(std::float_t value);
+        //
+        // explicit BigDecimal(std::double_t value);
+        //
+        // explicit BigDecimal(long double value);
 
         ~BigDecimal() = default;
 
-        inline BigDecimal operator=(const std::string_view &) const;
+#pragma endregion Constructors / Destructors
 
-        inline BigDecimal operator=(const std::string &) const;;
 
-        inline BigDecimal operator=(const char *) const;
+#pragma region assignment operators
 
-        inline BigDecimal operator=(std::int8_t) const;
+        BigDecimal &operator=(const BigDecimal &other) = default;
 
-        inline BigDecimal operator=(std::uint8_t) const;
+        BigDecimal &operator=(BigDecimal &&other) = default;
 
-        inline BigDecimal operator=(std::int16_t) const;
+        BigDecimal &operator=(int8_t);
 
-        inline BigDecimal operator=(std::uint16_t) const;
+        BigDecimal &operator=(uint8_t);
 
-        inline BigDecimal operator=(std::int32_t) const;
+        BigDecimal &operator=(int16_t);
 
-        inline BigDecimal operator=(std::uint32_t) const;
+        BigDecimal &operator=(uint16_t);
 
-        inline BigDecimal operator=(std::int64_t) const;
+        BigDecimal &operator=(int32_t);
 
-        inline BigDecimal operator=(std::uint64_t) const;
+        BigDecimal &operator=(uint32_t);
 
-        inline BigDecimal operator=(std::float_t) const;
+        BigDecimal &operator=(int64_t);
 
-        inline BigDecimal operator=(std::double_t) const;
+        BigDecimal &operator=(std::uint64_t);
 
-        inline BigDecimal operator=(long double) const;
+        // inline BigDecimal &operator=(std::float_t) const;
+        //
+        // inline BigDecimal &operator=(std::double_t) const;
+        //
+        // inline BigDecimal &operator=(long double) const;
+
+#pragma endregion assignment operators
+
+        friend std::ostream &operator<<(std::ostream &out, const BigDecimal &obj) {
+            if (obj.is_negative) {
+                out << "-";
+            }
+            for (auto i: obj.value) {
+                out << i;
+            }
+            return out;
+        }
 
     private:
-        std::vector<bool> value = {false};
+        bool is_negative = false;
+        std::vector<bool> value;
         size_t exponent = 0;
-        size_t size_decimal = 1;
-        size_t capacity = 1;
     };
 } // ephir::bigdecimal
 

@@ -6,73 +6,167 @@
 
 using namespace ephir::bigdecimal;
 
-#pragma region Constructors / Destructors
-
-BigDecimal::BigDecimal(const size_t capacity): value(capacity), capacity(capacity) {
+static bool ephir::bigdecimal::containsNotDigit(const std::string_view &value) {
+    auto start = 0;
+    if (value[0] == '-') {
+        start = 1;
+    }
+    for (auto i = start; i < value.size(); i++) {
+        if (!isdigit(value[i])) {
+            return true;
+        }
+    }
+    return false;
 }
 
-BigDecimal::BigDecimal(const std::string_view &value): value(value.size()), capacity(value.size()) {
+#pragma region Constructors / Destructors
 
+BigDecimal BigDecimal::create(const std::string_view &value) {
+    if (containsNotDigit(value)) {
+        throw std::invalid_argument("Invalid Decimal String");
+    }
+    auto result = BigDecimal();
+    auto start_pos = 0;
+    if (value[0] == '-') {
+        result.is_negative = true;
+        start_pos = 1;
+    }
+    auto rev_value = std::string(value.substr(start_pos));
+    while (rev_value.size() > 0) {
+        uint8_t carry = 0;
+        if (const auto first = rev_value[0] - '0'; first / 2 == 0) {
+            rev_value.erase(rev_value.begin());
+            carry = first % 2;
+        }
+        for (auto &c: rev_value) {
+            const auto num = c - '0' + carry * 10;
+            c = num / 2 + '0';
+            carry = num % 2;
+        }
+        result.value.push_back(carry);
+    }
+    std::reverse(result.value.begin(), result.value.end());
+    return result;
+}
+
+BigDecimal::BigDecimal(const size_t size): value(size) {
+    value[0] = false;
+}
+
+BigDecimal::BigDecimal(int8_t value) {
+    if (value < 0) {
+        this->is_negative = true;
+        value = -value;
+    }
+    while (value > 0) {
+        this->value.push_back(value % 2);
+        value /= 2;
+    }
+    std::reverse(this->value.begin(), this->value.end());
+}
+
+BigDecimal::BigDecimal(uint8_t value) {
+    while (value > 0) {
+        this->value.push_back(value % 2);
+        value /= 2;
+    }
+    std::reverse(this->value.begin(), this->value.end());
+}
+
+BigDecimal::BigDecimal(int16_t value) {
+    if (value < 0) {
+        this->is_negative = true;
+        value = -value;
+    }
+    while (value > 0) {
+        this->value.push_back(value % 2);
+        value /= 2;
+    }
+    std::reverse(this->value.begin(), this->value.end());
+}
+
+BigDecimal::BigDecimal(uint16_t value) {
+    while (value > 0) {
+        this->value.push_back(value % 2);
+        value /= 2;
+    }
+    std::reverse(this->value.begin(), this->value.end());
+}
+
+BigDecimal::BigDecimal(int32_t value) {
+    if (value < 0) {
+        this->is_negative = true;
+        value = -value;
+    }
+    while (value > 0) {
+        this->value.push_back(value % 2);
+        value /= 2;
+    }
+    std::reverse(this->value.begin(), this->value.end());
+}
+
+BigDecimal::BigDecimal(uint32_t value) {
+    while (value > 0) {
+        this->value.push_back(value % 2);
+        value /= 2;
+    }
+    std::reverse(this->value.begin(), this->value.end());
+}
+
+BigDecimal::BigDecimal(int64_t value) {
+    if (value < 0) {
+        this->is_negative = true;
+        value = -value;
+    }
+    while (value > 0) {
+        this->value.push_back(value % 2);
+        value /= 2;
+    }
+    std::reverse(this->value.begin(), this->value.end());
+}
+
+BigDecimal::BigDecimal(uint64_t value) {
+    while (value > 0) {
+        this->value.push_back(value % 2);
+        value /= 2;
+    }
+    std::reverse(this->value.begin(), this->value.end());
 }
 
 #pragma endregion Constructors / Destructors
 
-#pragma region equals
+#pragma region assignment operators
 
-inline BigDecimal BigDecimal::operator=(const std::string_view &value) const {
-    return BigDecimal(value);
+BigDecimal &BigDecimal::operator=(const int8_t value) {
+    return *this = BigDecimal(value);
 }
 
-inline BigDecimal BigDecimal::operator=(const std::string &value) const {
-    return BigDecimal(std::string_view(value));
+BigDecimal &BigDecimal::operator=(const uint8_t value) {
+    return *this = BigDecimal(value);
 }
 
-inline BigDecimal BigDecimal::operator=(const char *value) const {
-    return BigDecimal(value);
+BigDecimal &BigDecimal::operator=(const int16_t value) {
+    return *this = BigDecimal(value);
 }
 
-inline BigDecimal BigDecimal::operator=(const std::int8_t value) const {
-    return BigDecimal(value);
+BigDecimal &BigDecimal::operator=(const uint16_t value) {
+    return *this = BigDecimal(value);
 }
 
-inline BigDecimal BigDecimal::operator=(const std::uint8_t value) const {
-    return BigDecimal(value);
+BigDecimal &BigDecimal::operator=(const int32_t value) {
+    return *this = BigDecimal(value);
 }
 
-inline BigDecimal BigDecimal::operator=(const std::int16_t value) const {
-    return BigDecimal(value);
+BigDecimal &BigDecimal::operator=(const uint32_t value) {
+    return *this = BigDecimal(value);
 }
 
-inline BigDecimal BigDecimal::operator=(const std::uint16_t value) const {
-    return BigDecimal(value);
+BigDecimal &BigDecimal::operator=(const int64_t value) {
+    return *this = BigDecimal(value);
 }
 
-inline BigDecimal BigDecimal::operator=(const std::int32_t value) const {
-    return BigDecimal(value);
+BigDecimal &BigDecimal::operator=(const uint64_t value) {
+    return *this = BigDecimal(value);
 }
 
-inline BigDecimal BigDecimal::operator=(const std::uint32_t value) const {
-    return BigDecimal(value);
-}
-
-inline BigDecimal BigDecimal::operator=(const std::int64_t value) const {
-    return BigDecimal(value);
-}
-
-inline BigDecimal BigDecimal::operator=(const std::uint64_t value) const {
-    return BigDecimal(value);
-}
-
-inline BigDecimal BigDecimal::operator=(const std::float_t value) const {
-    return BigDecimal(value);
-}
-
-inline BigDecimal BigDecimal::operator=(const std::double_t value) const {
-    return BigDecimal(value);
-}
-
-inline BigDecimal BigDecimal::operator=(const long double value) const {
-    return BigDecimal(value);
-}
-
-#pragma endregion equals
+#pragma endregion assignment operators
