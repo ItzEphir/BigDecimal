@@ -1,28 +1,17 @@
 //
-// Created by Дмитрий Дворянников on 29.01.2025.
+// Created by ephir on 29.01.2025.
 //
 
 #include "../include/BigDecimal.h"
 
-using namespace ephir::bigdecimal;
+#include <iostream>
 
-static bool ephir::bigdecimal::containsNotDigit(const std::string_view &value) {
-    auto start = 0;
-    if (value[0] == '-') {
-        start = 1;
-    }
-    for (auto i = start; i < value.size(); i++) {
-        if (!isdigit(value[i])) {
-            return true;
-        }
-    }
-    return false;
-}
+using namespace ephir::bigdecimal;
 
 #pragma region Constructors / Destructors
 
-BigDecimal BigDecimal::create(const std::string_view &value) {
-    if (containsNotDigit(value)) {
+BigDecimal BigDecimal::create(const std::string_view& value) {
+    if (StringHelper::containsNotDigit(value)) {
         throw std::invalid_argument("Invalid Decimal String");
     }
     auto result = BigDecimal();
@@ -32,15 +21,17 @@ BigDecimal BigDecimal::create(const std::string_view &value) {
         start_pos = 1;
     }
     auto rev_value = std::string(value.substr(start_pos));
-    while (rev_value.size() > 0) {
+    while (!rev_value.empty()) {
         uint8_t carry = 0;
-        if (const auto first = rev_value[0] - '0'; first / 2 == 0) {
+        if (const auto first = rev_value[0] - '0'; first / 2 == 0
+        )
+        {
             rev_value.erase(rev_value.begin());
             carry = first % 2;
         }
-        for (auto &c: rev_value) {
+        for (auto& c : rev_value) {
             const auto num = c - '0' + carry * 10;
-            c = num / 2 + '0';
+            c = static_cast<char>('0' + num / 2);
             carry = num % 2;
         }
         result.value.push_back(carry);
@@ -56,7 +47,7 @@ BigDecimal::BigDecimal(const size_t size): value(size) {
 BigDecimal::BigDecimal(int8_t value) {
     if (value < 0) {
         this->is_negative = true;
-        value = -value;
+        value = static_cast<int8_t>(-value);
     }
     while (value > 0) {
         this->value.push_back(value % 2);
@@ -76,7 +67,7 @@ BigDecimal::BigDecimal(uint8_t value) {
 BigDecimal::BigDecimal(int16_t value) {
     if (value < 0) {
         this->is_negative = true;
-        value = -value;
+        value = static_cast<int16_t>(-value);
     }
     while (value > 0) {
         this->value.push_back(value % 2);
@@ -137,36 +128,102 @@ BigDecimal::BigDecimal(uint64_t value) {
 
 #pragma region assignment operators
 
-BigDecimal &BigDecimal::operator=(const int8_t value) {
+BigDecimal& BigDecimal::operator=(const int8_t value) {
     return *this = BigDecimal(value);
 }
 
-BigDecimal &BigDecimal::operator=(const uint8_t value) {
+BigDecimal& BigDecimal::operator=(const uint8_t value) {
     return *this = BigDecimal(value);
 }
 
-BigDecimal &BigDecimal::operator=(const int16_t value) {
+BigDecimal& BigDecimal::operator=(const int16_t value) {
     return *this = BigDecimal(value);
 }
 
-BigDecimal &BigDecimal::operator=(const uint16_t value) {
+BigDecimal& BigDecimal::operator=(const uint16_t value) {
     return *this = BigDecimal(value);
 }
 
-BigDecimal &BigDecimal::operator=(const int32_t value) {
+BigDecimal& BigDecimal::operator=(const int32_t value) {
     return *this = BigDecimal(value);
 }
 
-BigDecimal &BigDecimal::operator=(const uint32_t value) {
+BigDecimal& BigDecimal::operator=(const uint32_t value) {
     return *this = BigDecimal(value);
 }
 
-BigDecimal &BigDecimal::operator=(const int64_t value) {
+BigDecimal& BigDecimal::operator=(const int64_t value) {
     return *this = BigDecimal(value);
 }
 
-BigDecimal &BigDecimal::operator=(const uint64_t value) {
+BigDecimal& BigDecimal::operator=(const uint64_t value) {
     return *this = BigDecimal(value);
 }
 
 #pragma endregion assignment operators
+
+std::string BigDecimal::to_bin_string() const {
+    std::string result;
+    if (this->is_negative) {
+        result += '-';
+    }
+    for (auto i : this->value) {
+        result += std::to_string(i);
+    }
+    return result;
+}
+
+std::ostream& BigDecimal::binary_encode(std::ostream& out, const BigDecimal& obj) {
+    if (obj.is_negative) {
+        out << "-";
+    }
+    for (auto i : obj.value) {
+        out << i;
+    }
+    return out;
+}
+
+void BigDecimal::print_binary() const {
+    binary_encode(std::cout, *this);
+}
+
+bool BigDecimal::operator==(const BigDecimal& other) const {
+    if (this->is_negative != other.is_negative) {
+        return false;
+    }
+    if (this->exponent != other.exponent) {
+        return false;
+    }
+    return this->value == other.value;
+}
+
+size_t BigDecimal::fast_log2(size_t n) {
+    static const int lookup[64] = {
+        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
+    };
+
+    if (n == 0) return 0;
+
+    size_t log = 0;
+    if (n >= static_cast<size_t>(1) << 32) {
+        n >>= 32;
+        log += 32;
+    }
+    if (n >= static_cast<size_t>(1) << 16) {
+        n >>= 16;
+        log += 16;
+    }
+    if (n >= static_cast<size_t>(1) << 8) {
+        n >>= 8;
+        log += 8;
+    }
+    if (n >= static_cast<size_t>(1) << 4) {
+        n >>= 4;
+        log += 4;
+    }
+    log += lookup[n - 1];
+    return log;
+}

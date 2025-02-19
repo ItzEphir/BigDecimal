@@ -1,26 +1,25 @@
 //
-// Created by Дмитрий Дворянников on 29.01.2025.
+// Created by ephir on 29.01.2025.
 //
 
 #ifndef BIGDECIMAL_H
 #define BIGDECIMAL_H
 #include <ostream>
 #include <vector>
+#include "StringHelper.h"
 
 
 namespace ephir::bigdecimal {
-    static bool containsNotDigit(const std::string_view &);
-
     class BigDecimal final {
     public:
 #pragma region Constructors / Destructors
-        static BigDecimal create(const std::string_view &);
+        static BigDecimal create(const std::string_view&);
 
         BigDecimal() = default;
 
-        BigDecimal(const BigDecimal &other) = default;
+        BigDecimal(const BigDecimal& other) = default;
 
-        BigDecimal(BigDecimal &&other) = default;
+        BigDecimal(BigDecimal&& other) = default;
 
         explicit BigDecimal(size_t size);
 
@@ -50,28 +49,27 @@ namespace ephir::bigdecimal {
 
 #pragma endregion Constructors / Destructors
 
-
 #pragma region assignment operators
 
-        BigDecimal &operator=(const BigDecimal &other) = default;
+        BigDecimal& operator=(const BigDecimal& other) = default;
 
-        BigDecimal &operator=(BigDecimal &&other) = default;
+        BigDecimal& operator=(BigDecimal&& other) = default;
 
-        BigDecimal &operator=(int8_t);
+        BigDecimal& operator=(int8_t);
 
-        BigDecimal &operator=(uint8_t);
+        BigDecimal& operator=(uint8_t);
 
-        BigDecimal &operator=(int16_t);
+        BigDecimal& operator=(int16_t);
 
-        BigDecimal &operator=(uint16_t);
+        BigDecimal& operator=(uint16_t);
 
-        BigDecimal &operator=(int32_t);
+        BigDecimal& operator=(int32_t);
 
-        BigDecimal &operator=(uint32_t);
+        BigDecimal& operator=(uint32_t);
 
-        BigDecimal &operator=(int64_t);
+        BigDecimal& operator=(int64_t);
 
-        BigDecimal &operator=(std::uint64_t);
+        BigDecimal& operator=(std::uint64_t);
 
         // inline BigDecimal &operator=(std::float_t) const;
         //
@@ -81,21 +79,23 @@ namespace ephir::bigdecimal {
 
 #pragma endregion assignment operators
 
-        friend std::ostream &operator<<(std::ostream &out, const BigDecimal &obj) {
-            if (obj.is_negative) {
-                out << "-";
-            }
-            for (auto i: obj.value) {
-                out << i;
-            }
-            return out;
-        }
+        [[nodiscard]] std::string to_bin_string() const;
+
+        static std::ostream& binary_encode(std::ostream& out, const BigDecimal& obj);
+
+        void print_binary() const;
+
+        std::vector<bool>& get_raw() { return value; }
+
+        bool operator==(const BigDecimal& other) const;
 
     private:
         bool is_negative = false;
         std::vector<bool> value;
         size_t exponent = 0;
+
+        static size_t fast_log2(size_t n);
     };
 } // ephir::bigdecimal
 
-#endif //BIGDECIMAL_H
+#endif // BIGDECIMAL_H
