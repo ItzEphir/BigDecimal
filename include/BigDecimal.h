@@ -87,12 +87,16 @@ namespace ephir::bigdecimal {
 
         std::vector<bool>& get_raw() { return value; }
 
+        void set_exp(const size_t exp) { this->exponent = exp; }
+
         bool operator==(const BigDecimal& other) const;
 
     private:
         bool is_negative = false;
         std::vector<bool> value;
         size_t exponent = 0;
+
+        void optimize_end();
 
         static size_t fast_log2(size_t n);
     };

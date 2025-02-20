@@ -24,8 +24,7 @@ BigDecimal BigDecimal::create(const std::string_view& value) {
     while (!rev_value.empty()) {
         uint8_t carry = 0;
         if (const auto first = rev_value[0] - '0'; first / 2 == 0
-        )
-        {
+        ) {
             rev_value.erase(rev_value.begin());
             carry = first % 2;
         }
@@ -37,6 +36,11 @@ BigDecimal BigDecimal::create(const std::string_view& value) {
         result.value.push_back(carry);
     }
     std::reverse(result.value.begin(), result.value.end());
+    for (auto c : result.value) {
+        std::cout << c;
+    }
+    std::cout << std::endl;
+    result.optimize_end();
     return result;
 }
 
@@ -196,6 +200,17 @@ bool BigDecimal::operator==(const BigDecimal& other) const {
     }
     return this->value == other.value;
 }
+
+void BigDecimal::optimize_end() {
+    size_t add_exponent = 0;
+    while (value[value.size() - add_exponent - 1] == false) {
+        add_exponent++;
+    }
+    if (add_exponent == 0) return;
+    exponent += add_exponent;
+    value.erase(value.end() - static_cast<long>(add_exponent), value.end());
+}
+
 
 size_t BigDecimal::fast_log2(size_t n) {
     static const int lookup[64] = {

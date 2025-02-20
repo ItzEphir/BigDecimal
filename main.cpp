@@ -3,4 +3,7 @@
 using namespace ephir::bigdecimal;
 using std::string_view_literals::operator ""sv;
 
-int main() {}
+int main() {
+    const auto actual = BigDecimal::create("3");
+    actual.print_binary();
+}
