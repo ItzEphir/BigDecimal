@@ -4,6 +4,8 @@
 
 #include "../include/StringHelper.h"
 
+#include <sstream>
+
 using namespace ephir::bigdecimal;
 
 bool StringHelper::containsOnlyDigit(const std::string_view& str) {
@@ -29,4 +31,19 @@ bool StringHelper::containsOnlyDigit(const std::string_view& str) {
 
 bool StringHelper::containsNotDigit(const std::string_view& str) {
     return !containsOnlyDigit(str);
+}
+
+std::vector<std::string_view> StringHelper::split(const std::string_view& str, char delimiter) {
+    std::vector<std::string_view> result;
+    size_t start = 0;
+    size_t end;
+
+    while ((end = str.find(delimiter, start)) != std::string_view::npos) {
+        result.emplace_back(str.substr(start, end - start));
+        start = end + 1;
+    }
+
+    // Add the last part
+    result.emplace_back(str.substr(start));
+    return result;
 }

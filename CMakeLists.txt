@@ -15,8 +15,11 @@ add_executable(tests test.cpp
         include/BigDecimal.h
         src/StringHelper.cpp
         include/StringHelper.h
-        src/StringHelperTests.cpp
+        src/Maths.cpp
+        include/Maths.h
         src/BigDecimalTests.cpp
+        src/StringHelperTests.cpp
+        src/MathsTests.cpp
 )
 
 target_link_libraries(tests GTest::gtest GTest::gtest_main)
@@ -31,4 +34,6 @@ add_executable(
         include/BigDecimal.h
         src/StringHelper.cpp
         include/StringHelper.h
+        include/Maths.h
+        src/Maths.cpp
 )

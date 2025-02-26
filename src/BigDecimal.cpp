@@ -3,10 +3,13 @@
 //
 
 #include "../include/BigDecimal.h"
+#include "../include/Maths.h"
 
 #include <iostream>
 
 using namespace ephir::bigdecimal;
+
+BigDecimal BigDecimal::ZERO = create("0");
 
 #pragma region Constructors / Destructors
 
@@ -14,32 +17,21 @@ BigDecimal BigDecimal::create(const std::string_view& value) {
     if (StringHelper::containsNotDigit(value)) {
         throw std::invalid_argument("Invalid Decimal String");
     }
-    auto result = BigDecimal();
-    auto start_pos = 0;
-    if (value[0] == '-') {
-        result.is_negative = true;
-        start_pos = 1;
+    BigDecimal result;
+    if (value == "0" || value == "-0") {
+        result.value = {false};
+        return result;
     }
-    auto rev_value = std::string(value.substr(start_pos));
-    while (!rev_value.empty()) {
-        uint8_t carry = 0;
-        if (const auto first = rev_value[0] - '0'; first / 2 == 0
-        ) {
-            rev_value.erase(rev_value.begin());
-            carry = first % 2;
-        }
-        for (auto& c : rev_value) {
-            const auto num = c - '0' + carry * 10;
-            c = static_cast<char>('0' + num / 2);
-            carry = num % 2;
-        }
-        result.value.push_back(carry);
+    const auto val = std::string(value);
+    const auto parts = StringHelper::split(val, '.');
+    const auto partBefore = parts[0];
+    const auto partAfter = parts.size() > 1 ? parts[1] : "";
+    result.process_integer(partBefore);
+    result.process_fractional(partAfter);
+    if (result.is_negative) {
+        result.reverse_value();
     }
-    std::reverse(result.value.begin(), result.value.end());
-    for (auto c : result.value) {
-        std::cout << c;
-    }
-    std::cout << std::endl;
+    result.optimize_start();
     result.optimize_end();
     return result;
 }
@@ -201,44 +193,98 @@ bool BigDecimal::operator==(const BigDecimal& other) const {
     return this->value == other.value;
 }
 
+static bool containsOnlyZeros(const std::vector<bool>& value) {
+    return !std::any_of(value.begin(), value.end(), [](const bool x) { return x; });
+}
+
+void BigDecimal::optimize_start() {
+    if (value.empty()) return;
+    if (containsOnlyZeros(value) && is_negative == false) {
+        value = {false};
+        exponent = 0;
+        return;
+    }
+
+    size_t to_delete;
+    for (to_delete = 0; value[to_delete] == is_negative; to_delete++) {}
+    if (to_delete == 0) return;
+    value.erase(value.begin(), value.begin() + static_cast<long>(to_delete));
+    if (value.empty()) {
+        value = {false};
+    }
+}
+
 void BigDecimal::optimize_end() {
     size_t add_exponent = 0;
-    while (value[value.size() - add_exponent - 1] == false) {
+    if (value.empty()) return;
+    if (containsOnlyZeros(value) && is_negative == false) {
+        value = {false};
+        exponent = 0;
+        return;
+    }
+    while (value[value.size() - add_exponent - 1] == is_negative) {
         add_exponent++;
     }
     if (add_exponent == 0) return;
-    exponent += add_exponent;
+    exponent += static_cast<int64_t>(add_exponent);
     value.erase(value.end() - static_cast<long>(add_exponent), value.end());
+    if (value.empty()) {
+        value = {false};
+    }
 }
 
+void BigDecimal::process_integer(const std::string_view& str) {
+    if (str.empty()) return;
+    auto start_pos = 0;
+    if (str[0] == '-') {
+        is_negative = true;
+        start_pos = 1;
+    }
+    auto rev_value = std::string(str.substr(start_pos));
+    while (!rev_value.empty()) {
+        uint8_t carry = 0;
+        if (const auto first = rev_value[0] - '0'; first / 2 == 0
+        ) {
+            rev_value.erase(rev_value.begin());
+            carry = first % 2;
+        }
+        for (auto& c : rev_value) {
+            const auto num = c - '0' + carry * 10;
+            c = static_cast<char>('0' + num / 2);
+            carry = num % 2;
+        }
+        value.push_back(carry);
+    }
+    std::reverse(this->value.begin(), this->value.end());
+}
 
-size_t BigDecimal::fast_log2(size_t n) {
-    static const int lookup[64] = {
-        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
-    };
+static void mult2(std::string& str) {
+    int64_t carry = 0;
+    for (int64_t i = static_cast<int64_t>(str.size()) - 1; i >= 0; i--) {
+        const auto num = str[i] - '0';
+        const auto result = num * 2 + carry;
+        carry = result / 10;
+        str[i] = static_cast<char>('0' + result % 10);
+    }
+}
 
-    if (n == 0) return 0;
+void BigDecimal::process_fractional(const std::string_view& str) {
+    if (str.empty()) return;
+    const size_t size = str.size() * maths::fast_log2(10) + 1;
+    auto dec_value = std::string(str);
+    exponent = -static_cast<int64_t>(size);
+    for (auto i = 0; i < size; i++) {
+        auto to_add = (dec_value[0] - '0') >= 5;
+        mult2(dec_value);
+        this->value.push_back(to_add);
+    }
+}
 
-    size_t log = 0;
-    if (n >= static_cast<size_t>(1) << 32) {
-        n >>= 32;
-        log += 32;
+void BigDecimal::reverse_value() {
+    for (auto i = 0; i < exponent; i++) {
+        value.push_back(is_negative);
     }
-    if (n >= static_cast<size_t>(1) << 16) {
-        n >>= 16;
-        log += 16;
+    for (auto&& i : value) {
+        i = !i;
     }
-    if (n >= static_cast<size_t>(1) << 8) {
-        n >>= 8;
-        log += 8;
-    }
-    if (n >= static_cast<size_t>(1) << 4) {
-        n >>= 4;
-        log += 4;
-    }
-    log += lookup[n - 1];
-    return log;
 }

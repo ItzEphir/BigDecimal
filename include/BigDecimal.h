@@ -12,6 +12,7 @@
 namespace ephir::bigdecimal {
     class BigDecimal final {
     public:
+        static BigDecimal ZERO;
 #pragma region Constructors / Destructors
         static BigDecimal create(const std::string_view&);
 
@@ -87,18 +88,24 @@ namespace ephir::bigdecimal {
 
         std::vector<bool>& get_raw() { return value; }
 
-        void set_exp(const size_t exp) { this->exponent = exp; }
+        void set_exp(const int64_t exp) { this->exponent = exp; }
 
         bool operator==(const BigDecimal& other) const;
 
-    private:
         bool is_negative = false;
+    private:
         std::vector<bool> value;
-        size_t exponent = 0;
+        int64_t exponent = 0;
+
+        void optimize_start();
 
         void optimize_end();
 
-        static size_t fast_log2(size_t n);
+        void process_integer(const std::string_view&);
+
+        void process_fractional(const std::string_view&);
+
+        void reverse_value();
     };
 } // ephir::bigdecimal
 
