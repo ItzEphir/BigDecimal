@@ -273,6 +273,4 @@ namespace ephir::bigdecimal {
         ASSERT_EQ(expected, actual);
     }
 
-    TEST_F(BigDecimal)
-
 } // ephir::bigdecimal
