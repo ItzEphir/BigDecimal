@@ -22,7 +22,7 @@ namespace ephir::bigdecimal {
 
         BigDecimal(BigDecimal&& other) = default;
 
-        explicit BigDecimal(size_t size);
+        // explicit BigDecimal(size_t accuracy);
 
         explicit BigDecimal(int8_t value);
 
@@ -103,6 +103,10 @@ namespace ephir::bigdecimal {
         bool operator<(const BigDecimal& other) const;
 
         bool operator<=(const BigDecimal& other) const;
+
+        BigDecimal operator+(const BigDecimal& other) const;
+
+        BigDecimal operator-(const BigDecimal& other) const;
 
 #pragma endregion Operators
 

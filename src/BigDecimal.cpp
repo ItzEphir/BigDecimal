@@ -42,9 +42,11 @@ BigDecimal BigDecimal::create(const std::string_view& value) {
     return result;
 }
 
-BigDecimal::BigDecimal(const size_t size): value(size) {
-    value[0] = false;
-}
+// BigDecimal::BigDecimal(const size_t accuracy) {
+//     value[0] = false;
+//     capacity = accuracy;
+//     exponent = -accuracy;
+// }
 
 BigDecimal::BigDecimal(int8_t value) {
     this->value.clear();
@@ -319,6 +321,15 @@ bool BigDecimal::operator<(const BigDecimal& other) const {
 
 bool BigDecimal::operator<=(const BigDecimal& other) const {
     return this->compare(other) <= 0;
+}
+
+BigDecimal BigDecimal::operator+(const BigDecimal& other) const {
+    // todo
+}
+
+
+BigDecimal BigDecimal::operator-(const BigDecimal& other) const {
+    return *this + -other;
 }
 
 #pragma endregion Operators
