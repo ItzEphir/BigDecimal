@@ -44,7 +44,7 @@ namespace ephir::bigdecimal {
 
 #pragma endregion Constructors / Destructors
 
-#pragma region assignment operators
+#pragma region Assignment operators
 
         BigDecimal& operator=(const BigDecimal& other) = default;
 
@@ -66,7 +66,9 @@ namespace ephir::bigdecimal {
 
         BigDecimal& operator=(std::uint64_t);
 
-#pragma endregion assignment operators
+#pragma endregion Assignment operators
+
+#pragma region String output
 
         [[nodiscard]] std::string to_bin_string() const;
 
@@ -74,19 +76,47 @@ namespace ephir::bigdecimal {
 
         void print_binary() const;
 
-        std::vector<bool>& get_raw() { return value; }
+#pragma endregion String output
+
+#pragma region Getters / Setters
 
         void set_exp(const int64_t exp) { this->exponent = exp; }
 
+#pragma endregion Getters / Setters
+
+#pragma region Operators
+
+        BigDecimal operator+() const;
+
+        BigDecimal operator-() const;
+
+        [[nodiscard]] int8_t compare(const BigDecimal& other) const;
+
         bool operator==(const BigDecimal& other) const;
 
-        friend class BigDecimalTests;
+        bool operator!=(const BigDecimal& other) const;
+
+        bool operator>(const BigDecimal& other) const;
+
+        bool operator>=(const BigDecimal& other) const;
+
+        bool operator<(const BigDecimal& other) const;
+
+        bool operator<=(const BigDecimal& other) const;
+
+#pragma endregion Operators
 
     private:
+#pragma region Fields
+
         std::vector<bool> value = {false};
         int64_t capacity = 0;
         int64_t exponent = 0;
         bool is_negative = false;
+
+#pragma endregion Fields
+
+#pragma region Useful private methods
 
         void optimize_number();
 
@@ -101,6 +131,13 @@ namespace ephir::bigdecimal {
         void process_fractional(const std::string_view&);
 
         void reverse_value();
+
+        [[nodiscard]] int8_t compare_positive(const BigDecimal& other) const;
+        [[nodiscard]] int8_t compare_negative(const BigDecimal& other) const;
+
+#pragma endregion Useful private methods
+
+        friend class BigDecimalTests;
     };
 } // ephir::bigdecimal
 

@@ -144,7 +144,7 @@ BigDecimal::BigDecimal(uint64_t value) {
 
 #pragma endregion Constructors / Destructors
 
-#pragma region assignment operators
+#pragma region Assignment operators
 
 BigDecimal& BigDecimal::operator=(const int8_t value) {
     return *this = BigDecimal(value);
@@ -178,7 +178,9 @@ BigDecimal& BigDecimal::operator=(const uint64_t value) {
     return *this = BigDecimal(value);
 }
 
-#pragma endregion assignment operators
+#pragma endregion Assignment operators
+
+#pragma region String output
 
 std::string BigDecimal::to_bin_string() const {
     std::string result;
@@ -205,15 +207,121 @@ void BigDecimal::print_binary() const {
     binary_encode(std::cout, *this);
 }
 
-bool BigDecimal::operator==(const BigDecimal& other) const {
-    if (this->is_negative != other.is_negative) {
+#pragma endregion String output
+
+#pragma region Operators
+
+static bool get_at(const std::vector<bool>& data, const size_t at) {
+    if (at >= data.size()) {
         return false;
     }
-    if (this->exponent != other.exponent) {
-        return false;
-    }
-    return this->value == other.value;
+    return data[at];
 }
+
+static bool get_fractional(const std::vector<bool>& data, int64_t exp, size_t at) {
+    if (data.size() + exp + at >= data.size()) {
+        return false;
+    }
+    return data[data.size() + exp + at];
+}
+
+BigDecimal BigDecimal::operator+() const {
+    return *this;
+}
+
+BigDecimal BigDecimal::operator-() const {
+    BigDecimal result = *this;
+    result.is_negative = !result.is_negative;
+    result.reverse_value();
+    result.value[result.value.size() - 1] = true;
+    result.optimize_end();
+    if (result.value.empty()) {
+        result.value = {false};
+    }
+    return result;
+}
+
+int8_t BigDecimal::compare_positive(const BigDecimal& other) const {
+    std::vector<bool> first_data = this->value;
+    std::vector<bool> second_data = other.value;
+
+    for (int64_t i = 0; i < this->capacity; i++) {
+        first_data.push_back(false);
+    }
+    for (int64_t i = 0; i < other.capacity; i++) {
+        second_data.push_back(false);
+    }
+
+    const int64_t integer1 = first_data.size() + this->exponent;
+
+    if (const int64_t integer2 = second_data.size() + other.exponent; integer1 != integer2) {
+        return integer1 > integer2 ? 1 : -1;
+    }
+
+    const int64_t integer = integer1;
+
+    for (int64_t i = 0; i < integer; i++) {
+        if (get_at(first_data, i) != get_at(second_data, i)) {
+            return get_at(first_data, i) ? 1 : -1;
+        }
+    }
+
+    const int64_t fractional1 = -this->exponent;
+    const int64_t fractional2 = -other.exponent;
+
+    if (fractional1 < 0 ^ fractional2 < 0) {
+        return fractional1 < 0 ? -1 : 1;
+    }
+
+    const int64_t fractional = std::min(fractional1, fractional2);
+
+    for (int64_t i = 0; i < fractional; i++) {
+        if (get_fractional(first_data, this->exponent, i) != get_fractional(second_data, other.exponent, i)) {
+            return get_fractional(first_data, this->exponent, i) ? 1 : -1;
+        }
+    }
+    if (fractional1 != fractional2) {
+        return fractional1 > fractional2 ? 1 : -1;
+    }
+    return 0;
+}
+
+int8_t BigDecimal::compare_negative(const BigDecimal& other) const {
+    return static_cast<int8_t>(-(-*this).compare_positive(-other)); // todo: rewrite for faster speed
+}
+
+int8_t BigDecimal::compare(const BigDecimal& other) const {
+    if (this->is_negative ^ other.is_negative) {
+        return this->is_negative ? -1 : 1;
+    }
+    return this->is_negative ? this->compare_negative(other) : this->compare_positive(other);
+}
+
+bool BigDecimal::operator==(const BigDecimal& other) const {
+    return this->compare(other) == 0;
+}
+
+bool BigDecimal::operator!=(const BigDecimal& other) const {
+    return this->compare(other) != 0;
+}
+
+bool BigDecimal::operator>(const BigDecimal& other) const {
+    return this->compare(other) > 0;
+}
+
+bool BigDecimal::operator>=(const BigDecimal& other) const {
+    return this->compare(other) >= 0;
+}
+
+bool BigDecimal::operator<(const BigDecimal& other) const {
+    return this->compare(other) < 0;
+}
+
+bool BigDecimal::operator<=(const BigDecimal& other) const {
+    return this->compare(other) <= 0;
+}
+
+#pragma endregion Operators
 
 static bool containsOnlyZeros(const std::vector<bool>& value) {
     return !std::any_of(value.begin(), value.end(), [](const bool x) { return x; });
@@ -326,7 +434,6 @@ void BigDecimal::process_fractional(const std::string_view& str) {
     const size_t size = str.size() * maths::fast_log2(10) + 1;
     auto dec_value = std::string(str);
     exponent = -static_cast<int64_t>(size);
-    capacity = exponent;
     for (auto i = 0; i < size; i++) {
         auto to_add = dec_value[0] - '0' >= 5;
         mult2(dec_value);
@@ -335,6 +442,10 @@ void BigDecimal::process_fractional(const std::string_view& str) {
 }
 
 void BigDecimal::reverse_value() {
+    for (auto i = 0; i < this->capacity; i++) {
+        value.push_back(is_negative);
+    }
+    this->capacity = 0;
     for (auto&& i : value) {
         i = !i;
     }
