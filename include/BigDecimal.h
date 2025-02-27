@@ -6,13 +6,13 @@
 #define BIGDECIMAL_H
 #include <ostream>
 #include <vector>
-#include "StringHelper.h"
 
 
 namespace ephir::bigdecimal {
     class BigDecimal final {
     public:
         static BigDecimal ZERO;
+
 #pragma region Constructors / Destructors
         static BigDecimal create(const std::string_view&);
 
@@ -40,12 +40,6 @@ namespace ephir::bigdecimal {
 
         explicit BigDecimal(uint64_t value);
 
-        // explicit BigDecimal(std::float_t value);
-        //
-        // explicit BigDecimal(std::double_t value);
-        //
-        // explicit BigDecimal(long double value);
-
         ~BigDecimal() = default;
 
 #pragma endregion Constructors / Destructors
@@ -72,12 +66,6 @@ namespace ephir::bigdecimal {
 
         BigDecimal& operator=(std::uint64_t);
 
-        // inline BigDecimal &operator=(std::float_t) const;
-        //
-        // inline BigDecimal &operator=(std::double_t) const;
-        //
-        // inline BigDecimal &operator=(long double) const;
-
 #pragma endregion assignment operators
 
         [[nodiscard]] std::string to_bin_string() const;
@@ -92,12 +80,19 @@ namespace ephir::bigdecimal {
 
         bool operator==(const BigDecimal& other) const;
 
-        bool is_negative = false;
+        friend class BigDecimalTests;
+
     private:
-        std::vector<bool> value;
+        std::vector<bool> value = {false};
+        int64_t capacity = 0;
         int64_t exponent = 0;
+        bool is_negative = false;
+
+        void optimize_number();
 
         void optimize_start();
+
+        void optimize_exponent();
 
         void optimize_end();
 

@@ -4,6 +4,7 @@
 
 #include "../include/BigDecimal.h"
 #include "../include/Maths.h"
+#include "../include/StringHelper.h"
 
 #include <iostream>
 
@@ -20,19 +21,24 @@ BigDecimal BigDecimal::create(const std::string_view& value) {
     BigDecimal result;
     if (value == "0" || value == "-0") {
         result.value = {false};
+        result.capacity = 0;
         return result;
     }
+    result.value.clear();
     const auto val = std::string(value);
     const auto parts = StringHelper::split(val, '.');
     const auto partBefore = parts[0];
     const auto partAfter = parts.size() > 1 ? parts[1] : "";
     result.process_integer(partBefore);
     result.process_fractional(partAfter);
-    if (result.is_negative) {
-        result.reverse_value();
-    }
     result.optimize_start();
-    result.optimize_end();
+    result.optimize_exponent();
+    if (value[0] == '-') {
+        result.is_negative = true;
+        result.reverse_value();
+        result.value[result.value.size() - 1] = true;
+        result.optimize_end();
+    }
     return result;
 }
 
@@ -41,6 +47,7 @@ BigDecimal::BigDecimal(const size_t size): value(size) {
 }
 
 BigDecimal::BigDecimal(int8_t value) {
+    this->value.clear();
     if (value < 0) {
         this->is_negative = true;
         value = static_cast<int8_t>(-value);
@@ -50,17 +57,21 @@ BigDecimal::BigDecimal(int8_t value) {
         value /= 2;
     }
     std::reverse(this->value.begin(), this->value.end());
+    optimize_number();
 }
 
 BigDecimal::BigDecimal(uint8_t value) {
+    this->value.clear();
     while (value > 0) {
         this->value.push_back(value % 2);
         value /= 2;
     }
     std::reverse(this->value.begin(), this->value.end());
+    optimize_number();
 }
 
 BigDecimal::BigDecimal(int16_t value) {
+    this->value.clear();
     if (value < 0) {
         this->is_negative = true;
         value = static_cast<int16_t>(-value);
@@ -70,17 +81,21 @@ BigDecimal::BigDecimal(int16_t value) {
         value /= 2;
     }
     std::reverse(this->value.begin(), this->value.end());
+    optimize_number();
 }
 
 BigDecimal::BigDecimal(uint16_t value) {
+    this->value.clear();
     while (value > 0) {
         this->value.push_back(value % 2);
         value /= 2;
     }
     std::reverse(this->value.begin(), this->value.end());
+    optimize_number();
 }
 
 BigDecimal::BigDecimal(int32_t value) {
+    this->value.clear();
     if (value < 0) {
         this->is_negative = true;
         value = -value;
@@ -90,17 +105,21 @@ BigDecimal::BigDecimal(int32_t value) {
         value /= 2;
     }
     std::reverse(this->value.begin(), this->value.end());
+    optimize_number();
 }
 
 BigDecimal::BigDecimal(uint32_t value) {
+    this->value.clear();
     while (value > 0) {
         this->value.push_back(value % 2);
         value /= 2;
     }
     std::reverse(this->value.begin(), this->value.end());
+    optimize_number();
 }
 
 BigDecimal::BigDecimal(int64_t value) {
+    this->value.clear();
     if (value < 0) {
         this->is_negative = true;
         value = -value;
@@ -110,14 +129,17 @@ BigDecimal::BigDecimal(int64_t value) {
         value /= 2;
     }
     std::reverse(this->value.begin(), this->value.end());
+    optimize_number();
 }
 
 BigDecimal::BigDecimal(uint64_t value) {
+    this->value.clear();
     while (value > 0) {
         this->value.push_back(value % 2);
         value /= 2;
     }
     std::reverse(this->value.begin(), this->value.end());
+    optimize_number();
 }
 
 #pragma endregion Constructors / Destructors
@@ -197,11 +219,25 @@ static bool containsOnlyZeros(const std::vector<bool>& value) {
     return !std::any_of(value.begin(), value.end(), [](const bool x) { return x; });
 }
 
+void BigDecimal::optimize_number() {
+    this->optimize_start();
+    this->optimize_exponent();
+    if (is_negative) {
+        this->reverse_value();
+        this->value[this->value.size() - 1] = true;
+        this->optimize_end();
+    }
+    if (this->value.empty()) {
+        this->value = {false};
+    }
+}
+
 void BigDecimal::optimize_start() {
     if (value.empty()) return;
     if (containsOnlyZeros(value) && is_negative == false) {
         value = {false};
         exponent = 0;
+        capacity = 0;
         return;
     }
 
@@ -214,15 +250,16 @@ void BigDecimal::optimize_start() {
     }
 }
 
-void BigDecimal::optimize_end() {
+void BigDecimal::optimize_exponent() {
     size_t add_exponent = 0;
     if (value.empty()) return;
-    if (containsOnlyZeros(value) && is_negative == false) {
+    if (containsOnlyZeros(value)) {
         value = {false};
         exponent = 0;
+        capacity = 0;
         return;
     }
-    while (value[value.size() - add_exponent - 1] == is_negative) {
+    while (value[value.size() - add_exponent - 1] == false) {
         add_exponent++;
     }
     if (add_exponent == 0) return;
@@ -233,11 +270,27 @@ void BigDecimal::optimize_end() {
     }
 }
 
+void BigDecimal::optimize_end() {
+    size_t add_capacity = 0;
+    if (value.empty()) return;
+    if (containsOnlyZeros(value)) {
+        value = {false};
+        exponent = 0;
+        capacity = 0;
+        return;
+    }
+    while (value[value.size() - add_capacity - 1] == is_negative) {
+        add_capacity++;
+    }
+    if (add_capacity == 0) return;
+    capacity += static_cast<int64_t>(add_capacity);
+    value.erase(value.end() - static_cast<long>(add_capacity), value.end());
+}
+
 void BigDecimal::process_integer(const std::string_view& str) {
     if (str.empty()) return;
     auto start_pos = 0;
     if (str[0] == '-') {
-        is_negative = true;
         start_pos = 1;
     }
     auto rev_value = std::string(str.substr(start_pos));
@@ -273,17 +326,15 @@ void BigDecimal::process_fractional(const std::string_view& str) {
     const size_t size = str.size() * maths::fast_log2(10) + 1;
     auto dec_value = std::string(str);
     exponent = -static_cast<int64_t>(size);
+    capacity = exponent;
     for (auto i = 0; i < size; i++) {
-        auto to_add = (dec_value[0] - '0') >= 5;
+        auto to_add = dec_value[0] - '0' >= 5;
         mult2(dec_value);
         this->value.push_back(to_add);
     }
 }
 
 void BigDecimal::reverse_value() {
-    for (auto i = 0; i < exponent; i++) {
-        value.push_back(is_negative);
-    }
     for (auto&& i : value) {
         i = !i;
     }
