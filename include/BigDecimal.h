@@ -9,7 +9,7 @@
 
 
 namespace ephir::bigdecimal {
-    class BigDecimal final {
+    class BigDecimal {
     public:
         static BigDecimal ZERO;
 

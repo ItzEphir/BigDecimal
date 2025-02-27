@@ -15,7 +15,7 @@ BigDecimal BigDecimal::ZERO = create("0");
 #pragma region Constructors / Destructors
 
 BigDecimal BigDecimal::create(const std::string_view& value) {
-    if (StringHelper::containsNotDigit(value)) {
+    if (StringHelper::contains_not_digit(value)) {
         throw std::invalid_argument("Invalid Decimal String");
     }
     BigDecimal result;
@@ -27,10 +27,10 @@ BigDecimal BigDecimal::create(const std::string_view& value) {
     result.value.clear();
     const auto val = std::string(value);
     const auto parts = StringHelper::split(val, '.');
-    const auto partBefore = parts[0];
-    const auto partAfter = parts.size() > 1 ? parts[1] : "";
-    result.process_integer(partBefore);
-    result.process_fractional(partAfter);
+    const auto part_before = parts[0];
+    const auto part_after = parts.size() > 1 ? parts[1] : "";
+    result.process_integer(part_before);
+    result.process_fractional(part_after);
     result.optimize_start();
     result.optimize_exponent();
     if (value[0] == '-') {
@@ -334,7 +334,7 @@ BigDecimal BigDecimal::operator-(const BigDecimal& other) const {
 
 #pragma endregion Operators
 
-static bool containsOnlyZeros(const std::vector<bool>& value) {
+static bool contains_only_zeros(const std::vector<bool>& value) {
     return !std::any_of(value.begin(), value.end(), [](const bool x) { return x; });
 }
 
@@ -353,7 +353,7 @@ void BigDecimal::optimize_number() {
 
 void BigDecimal::optimize_start() {
     if (value.empty()) return;
-    if (containsOnlyZeros(value) && is_negative == false) {
+    if (contains_only_zeros(value) && is_negative == false) {
         value = {false};
         exponent = 0;
         capacity = 0;
@@ -372,7 +372,7 @@ void BigDecimal::optimize_start() {
 void BigDecimal::optimize_exponent() {
     size_t add_exponent = 0;
     if (value.empty()) return;
-    if (containsOnlyZeros(value)) {
+    if (contains_only_zeros(value)) {
         value = {false};
         exponent = 0;
         capacity = 0;
@@ -392,7 +392,7 @@ void BigDecimal::optimize_exponent() {
 void BigDecimal::optimize_end() {
     size_t add_capacity = 0;
     if (value.empty()) return;
-    if (containsOnlyZeros(value)) {
+    if (contains_only_zeros(value)) {
         value = {false};
         exponent = 0;
         capacity = 0;

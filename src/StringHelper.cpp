@@ -8,7 +8,7 @@
 
 using namespace ephir::bigdecimal;
 
-bool StringHelper::containsOnlyDigit(const std::string_view& str) {
+bool StringHelper::contains_only_digit(const std::string_view& str) {
     auto start = 0;
     if (str.empty()) {
         return true;
@@ -29,8 +29,8 @@ bool StringHelper::containsOnlyDigit(const std::string_view& str) {
     return true;
 }
 
-bool StringHelper::containsNotDigit(const std::string_view& str) {
-    return !containsOnlyDigit(str);
+bool StringHelper::contains_not_digit(const std::string_view& str) {
+    return !contains_only_digit(str);
 }
 
 std::vector<std::string_view> StringHelper::split(const std::string_view& str, char delimiter) {

@@ -11,35 +11,35 @@ namespace ephir::bigdecimal {
     TEST_F(StringHelperTests, ContainsOnlyDigitsWithDigits) {
         const auto given = "123456789";
         constexpr auto expected = true;
-        const auto actual = StringHelper::containsOnlyDigit(given);
+        const auto actual = StringHelper::contains_only_digit(given);
         ASSERT_EQ(expected, actual);
     }
 
     TEST_F(StringHelperTests, ContaintsOnlyDigitsWithAlphas) {
         const auto given = "a123456789";
         constexpr auto expected = false;
-        const auto actual = StringHelper::containsOnlyDigit(given);
+        const auto actual = StringHelper::contains_only_digit(given);
         ASSERT_EQ(expected, actual);
     }
 
     TEST_F(StringHelperTests, ContainsOnlyDigitsWithNegative) {
         const auto given = "-123456789";
         constexpr auto expected = true;
-        const auto actual = StringHelper::containsOnlyDigit(given);
+        const auto actual = StringHelper::contains_only_digit(given);
         ASSERT_EQ(expected, actual);
     }
 
     TEST_F(StringHelperTests, ContainsOnlyDigitsWithPoint) {
         const auto given = "123456789.1";
         constexpr auto expected = true;
-        const auto actual = StringHelper::containsOnlyDigit(given);
+        const auto actual = StringHelper::contains_only_digit(given);
         ASSERT_EQ(expected, actual);
     }
 
     TEST_F(StringHelperTests, ContainsOnlyDigitsWithTwoPoints) {
         const auto given = "123456789.123456789.12133";
         constexpr auto expected = false;
-        const auto actual = StringHelper::containsOnlyDigit(given);
+        const auto actual = StringHelper::contains_only_digit(given);
         ASSERT_EQ(expected, actual);
     }
 

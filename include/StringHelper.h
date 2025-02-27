@@ -9,8 +9,8 @@
 namespace ephir::bigdecimal {
 
     struct StringHelper {
-        static bool containsOnlyDigit(const std::string_view &);
-        static bool containsNotDigit(const std::string_view &);
+        static bool contains_only_digit(const std::string_view &);
+        static bool contains_not_digit(const std::string_view &);
         static std::vector<std::string_view> split(const std::string_view&, char);
     };
 
