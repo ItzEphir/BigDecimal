@@ -12,7 +12,7 @@ namespace ephir::bigdecimal {
         static BigDecimal createExpected(const std::vector<bool>& data,
                                          const int64_t exponent,
                                          const bool is_negative = false,
-                                         const size_t capacity = 0) {
+                                         const int64_t capacity = 0) {
             BigDecimal result;
             result.value = data;
             result.exponent = exponent;
