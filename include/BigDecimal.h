@@ -139,6 +139,8 @@ namespace ephir::bigdecimal {
         [[nodiscard]] int8_t compare_positive(const BigDecimal& other) const;
         [[nodiscard]] int8_t compare_negative(const BigDecimal& other) const;
 
+        static BigDecimal plus(const BigDecimal& a, const BigDecimal& b);
+
 #pragma endregion Useful private methods
 
         friend class BigDecimalTests;

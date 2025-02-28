@@ -292,6 +292,77 @@ int8_t BigDecimal::compare_negative(const BigDecimal& other) const {
     return static_cast<int8_t>(-(-*this).compare_positive(-other)); // todo: rewrite for faster speed
 }
 
+bool fractional_at(std::vector<bool>& data, const bool is_negative, const int64_t at) {
+    if (data.size() - at - 1 >= data.size()) {
+        return is_negative;
+    }
+    return data[data.size() - at - 1];
+}
+
+bool integer_at(const std::vector<bool>& data, const int64_t fractional, const bool is_negative, const int64_t at) {
+    if (data.size() - fractional - at - 1 < 0 || data.size() - fractional - at - 1 >= data.size()) {
+        return is_negative;
+    }
+    return data[data.size() - fractional - at - 1];
+}
+
+BigDecimal BigDecimal::plus(const BigDecimal& a, const BigDecimal& b) {
+    std::vector<bool> first_data = {a.is_negative};
+    std::vector<bool> second_data = {b.is_negative};
+    first_data.insert(first_data.end(), a.value.begin(), a.value.end());
+    second_data.insert(second_data.end(), b.value.begin(), b.value.end());
+    for (auto i = 0; i < a.capacity; i++) {
+        first_data.push_back(a.is_negative);
+    }
+    for (auto i = 0; i < b.capacity; i++) {
+        second_data.push_back(b.is_negative);
+    }
+
+    std::vector<bool> result;
+    const auto fractional1 = -std::min(a.exponent, 0ll);
+    const auto fractional2 = -std::min(b.exponent, 0ll);
+    const auto max_fractional = std::max(fractional1, fractional2);
+    bool carry = false;
+    for (auto i = 0; i < max_fractional; i--) {
+        const auto bit1 = static_cast<int8_t>(fractional_at(first_data, a.is_negative, i));
+        const auto bit2 = static_cast<int8_t>(fractional_at(second_data, b.is_negative, i));
+        const auto res = bit1 + bit2 + carry;
+        result.push_back(res % 2);
+        carry = res / 2;
+    }
+
+    const int64_t positive_exponent1 = std::max(a.exponent, 0ll);
+    const int64_t positive_exponent2 = std::min(b.exponent, 0ll);
+    for (auto i = 0; i < positive_exponent1; i++) {
+        first_data.push_back(a.is_negative);
+    }
+    for (auto i = 0; i < positive_exponent2; i++) {
+        second_data.push_back(b.is_negative);
+    }
+
+    const auto integer1 = std::max(static_cast<int64_t>(first_data.size()) - fractional1, 0ll);
+    const auto integer2 = std::max(static_cast<int64_t>(second_data.size()) - fractional2, 0ll);
+    const int64_t max_integer = std::max(integer1, integer2);
+    for (auto i = 0; i < max_integer; i++) {
+        const auto bit1 = static_cast<int8_t>(integer_at(first_data, fractional1, a.is_negative, i));
+        const auto bit2 = static_cast<int8_t>(integer_at(second_data, fractional2, b.is_negative, i));
+        const auto res = bit1 + bit2 + carry;
+        result.push_back(res % 2);
+        carry = res / 2;
+    }
+    std::reverse(result.begin(), result.end());
+    auto out = BigDecimal();
+    out.value = result;
+    if (a.is_negative ^ b.is_negative) {
+        out.is_negative = !(!a.is_negative ? a >= -b : b >= -a);
+    }
+    out.exponent = -max_fractional;
+    out.optimize_start();
+    out.optimize_exponent();
+    out.optimize_end();
+    return out;
+}
+
 int8_t BigDecimal::compare(const BigDecimal& other) const {
     if (this->is_negative ^ other.is_negative) {
         return this->is_negative ? -1 : 1;
@@ -324,7 +395,7 @@ bool BigDecimal::operator<=(const BigDecimal& other) const {
 }
 
 BigDecimal BigDecimal::operator+(const BigDecimal& other) const {
-    // todo
+    return plus(*this, other);
 }
 
 

@@ -273,4 +273,20 @@ namespace ephir::bigdecimal {
         ASSERT_EQ(expected, actual);
     }
 
+    TEST_F(BigDecimalTests, TestPlus) {
+        const auto given_a = BigDecimal::create("12");
+        const auto given_b = BigDecimal::create("15");
+        const auto expected = BigDecimal::create("27");
+        const auto actual = given_a + given_b;
+        ASSERT_EQ(expected, actual);
+    }
+
+    TEST_F(BigDecimalTests, TestMinus) {
+        const auto given_a = BigDecimal::create("12");
+        const auto given_b = BigDecimal::create("5");
+        const auto expected = BigDecimal::create("7");
+        const auto actual = given_a - given_b;
+        ASSERT_EQ(expected, actual);
+    }
+
 } // ephir::bigdecimal
